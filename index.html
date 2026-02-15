@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎀</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Quicksand:wght@300;500&display=swap" rel="stylesheet">
+    
+    <style>
+  :root {
+  --bg-gradient: radial-gradient(circle, #c71b54, #b83b5e, #bb9c9c);
+
+  --glass-bg: rgba(255, 255, 255, 0.08);
+
+  --gold-btn: #d45d79;
+  --text-gold: #fff5e4;
+}
+
+
+
+
+
+        body { 
+            margin: 0; 
+            padding: 0;
+            overflow: hidden; 
+            background: var(--bg-gradient);
+            font-family: 'Charm';
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* --- MÀN HÌNH CHUNG (GLASSMORPHISM) --- */
+        #page1, #page2 {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 100;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 40px;
+            padding: 50px 40px;
+            width: 360px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+        }
+ 
+        h1 {
+            font-family: 'Dancing Script', cursive;
+            font-size: 3.5rem;
+            color: var(--text-gold);
+            margin-top: 0;
+            margin-bottom: 30px;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .input-group { text-align: left; margin-bottom: 20px; }
+        
+        label {
+            color: #ffffff;
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(255, 220, 243, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 0.9rem;
+            box-sizing: border-box;
+            outline: none;
+            transition: 0.3s;
+        } 
+            input::placeholder {
+                color: #ffe4ef;   
+                opacity: 0.6;
+}
+
+
+        input:focus { border-color: var(--gold-btn); }
+
+        button {
+            background: var(--gold-btn);
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            color: #ffffff;
+            border: none;
+            padding: 14px 45px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(233, 167, 207, 0.4);
+        }
+
+        #story-text {
+    font-family: 'Charm';
+    font-weight: 300; 
+    font-size: 1.4rem; 
+    line-height: 1.8; 
+    letter-spacing: 1px; 
+    color: var(--text-gold); 
+    text-align: center;
+    max-width: 85%;
+    margin: 0 auto;
+    font-style: italic; 
+}
+
+        .hidden { display: none !important; }
+        
+        #canvas-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 10;
+        }
+
+        #input_video { display: none; }
+    </style>
+</head>
+<body>
+<!-- MÀN HÌNH 1 -->
+    <div id="page1">
+        <div class="glass-card">
+            <h1>Welcome home</h1>
+            <div class="input-group">
+                <label>Your pulchritudinous name?</label>
+                <input type="text" id="nameInput" placeholder="Tên xink">
+            </div>
+            <div class="input-group">
+                <label>Điều-mà-ai-cũng-biết-là-gì-đấy</label>
+                <input type="text" id="questInput" placeholder="Công chúa quên thì có thể hỏi Meo">
+            </div>
+            <button onclick="checkInfo()">Brrrr</button>
+            <p id="error-msg" style="color: #8f0a0a; font-size: 0.9rem; display: none; margin-top: 15px;"> Ôi khônggg!!! Chỉ có một công chúa bic đúng thần chú mới mở được thui</p>
+        </div>
+    </div>
+
+    <!-- MÀN HÌNH 2 -->
+    <div id="page2" class="hidden">
+        <div class="glass-card">
+            <div id="story-text"></div>
+            <button id="startMagicBtn" class="hidden" onclick="goToPage3()">Tay xinh đây rùiii✨</button>
+        </div>
+    </div>
+
+    <!-- MÀN HÌNH 3 (Canvas) -->
+    <div id="canvas-container"></div>
+    <video id="input_video"></video>
+
+
+
+
+<script>
+    const CORRECT_NAME = "anh";
+    const CORRECT_QUEST = "quế anh là công chúa xinh đẹp nhất";
+    let handData = [];
+    let particles = [];
+    let isMagicActive = false;
+    let heartPulse = 0;
+    let textAlpha = 0; 
+    let binaryAlpha = 0; 
+    let morseSound = new Audio('morse.wav'); 
+    morseSound.loop = true; 
+    const BINARY_TEXT = "01101001 00100000 01101100 01101111 01110110 01100101 00100000 01111001 01101111 01110101";
+    const NORMAL_WISHES = [
+        "Meomoe đã chặn sự sì trét của bạn ✨",
+        "Phùuuuuu~ Meo đã thổi hếc sì trét trên người ebe rùi nè 🌟",
+        "Úuuu, elm thỏ nào đáng iêu thế này nhòoo 🐰🎀",
+        "Chả có gì là đúng cả, ngay cả Quanh cũng sai gính àaaa 😠",
+        "Sẽ qua thôi những u buồn thế gian~ Tình iu sẽ cháy nhưng hông tro tàn 🌈",
+        "TiraMissuuuuu 🥺",
+        "Ôm cáiiii, hum nai của Quanh sẽ thậc đáng iuuuu 🐟💖",
+        "Ai mò được vào đây vậy?? Công túa phải cười xinh mới đúng chứ nhờ 🤷‍♀️",
+        "Xin mời tân cử nhân Ti Ci Cute Ây ngành ngôn ngữ đáng eooo 🎓✨",
+        "Úm ba laaa~ Bạn đã nhận gói may mắn free vô thời hạn. Vui lòng cười thật chinhhh để kích hoạt 🧸💖",
+    ];
+    function getSpecialWish() {
+        const now = new Date();
+        const date = now.getDate();
+        const month = now.getMonth() + 1;
+
+        
+        if (month === 10 && date === 31) return "Hùuuuu! Cho kẹo hay bị chơmmm 🎃👻";
+        if (month === 12 && (date === 24 || date === 25)) return "Dáng chinhhh đang nhàm gì đấyyy...🎄❄️";
+        if (month === 2 && date === 14) return "27 Tết vui vẻ 🍫❤️";
+        if (month === 3 && date === 8) return "Ngày con gái toàn cầu chúc xinh gái của em ngày nào cũng bình an vui vẻ 💐";
+        if (month === 1 && date === 7) return "Hoi đi ra đi, Meo chúc sinh nhật ùi mòooo 🎂";
+        if (month === 6 && date === 1) return "Ebe oiii~ quốc tế ebe đáng iêu nhóoo~ Làm ebe thoải mái một hôm xem nàooo 🧸💖";
+        if (month === 20 && date === 10) return "Chẳng phải nhân ngày phụ nữ Việt Nam, chúc Quế Anh ngày nào cũng bình an, vui vẻ  💐";
+        if (month === 1 && date === 1) return "Năm mới bình an Quế Anh nhó 🎆✨";
+        if (month === 4 && date === 1) return "Meo ghéc bạn lắmmmm...🐟🤡";
+        if (month === 5 && date === 1) return "Kẻ hủy diệt ngày nghỉ âu ùiiii 🌴";
+        if (month === 12 && date === 31) return "Đã hết một năm rồiii~ Ebe có mong năm mới không nàooo 🎇";
+        if (month === 9 && date === 21) return "Once in a blue moon...Cảm ơn chị bé 🐰💕";
+        if (month === 1 && date === 14) return "Chị có nhớ Meo hong 🥺";  
+     
+        const randomIndex = Math.floor(Math.random() * NORMAL_WISHES.length);
+        return NORMAL_WISHES[randomIndex];
+    }
+    let wishText = getSpecialWish();
+
+
+    const HEART_SIZE = 15; 
+    const PARTICLE_COUNT = 1000; 
+
+    function checkInfo() {
+        const n = document.getElementById('nameInput').value.toLowerCase();
+        const d = document.getElementById('questInput').value.toLowerCase();
+        if (n.includes(CORRECT_NAME) && d === CORRECT_QUEST) {
+            document.getElementById('page1').classList.add('hidden');
+            document.getElementById('page2').classList.remove('hidden');
+            runStory();
+        } else {
+            document.getElementById('error-msg').style.display = 'block';
+        }
+    }
+    async function runStory() {
+        const txt = "Quanh đưa tay Meo mượn xíu xem nàooo";
+        const el = document.getElementById('story-text');
+        for (let i = 0; i < txt.length; i++) {
+            el.innerHTML += txt[i];
+            await new Promise(r => setTimeout(r, 80));
+        }
+        document.getElementById('startMagicBtn').classList.remove('hidden');
+    }
+// --- MEDIA PIPE --- //
+    const hands = new Hands({
+        locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`
+    });
+    hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+    });
+    hands.onResults(res => { handData = res.multiHandLandmarks; });
+
+    function goToPage3() {
+        document.getElementById('page2').classList.add('hidden');
+        isMagicActive = true;
+        document.body.style.background = "#000000";
+        const video = document.getElementById('input_video');
+        const cam = new Camera(video, {
+            onFrame: async () => { await hands.send({ image: video }); },
+            width: 640, height: 480
+        });
+        cam.start();
+    }
+    function nuatraitim() {
+if (!handData || handData.length === 0) return false;
+let hand = handData[0];
+
+let thumbTip = hand[4];
+let indexTip = hand[8];
+let indexDip = hand[7];
+let wrist = hand[0];
+let midMcp = hand[9];
+
+let handSize = dist(wrist.x, wrist.y, midMcp.x, midMcp.y);
+let d = dist(thumbTip.x, thumbTip.y, indexTip.x, indexTip.y) / handSize;
+let isIndexCurved =
+dist(indexTip.x, indexTip.y, wrist.x, wrist.y) <
+dist(indexDip.x, indexDip.y, wrist.x, wrist.y);
+let verticalGap = Math.abs(thumbTip.y - indexTip.y);
+
+return (d > 0.25 && d < 0.9 && verticalGap < 0.5 && isIndexCurved);
+}
+
+function isVSign() {
+    if (!handData || handData.length === 0) return false;
+    let hand = handData[0];
+    let indexTip = hand[8];
+    let indexPip = hand[6];
+    let middleTip = hand[12];
+    let middlePip = hand[10];
+    let ringTip = hand[16];
+    let ringPip = hand[14];
+    let pinkyTip = hand[20];
+    let pinkyPip = hand[18];
+    let indexUp = indexTip.y < indexPip.y;
+    let middleUp = middleTip.y < middlePip.y;
+    let ringDown = ringTip.y > ringPip.y;
+    let pinkyDown = pinkyTip.y > pinkyPip.y;
+    return (indexUp && middleUp && ringDown && pinkyDown);
+}
+function isILYSign() {
+    if (!handData || handData.length === 0) return false;
+    let hand = handData[0];
+    let indexUp = hand[8].y < hand[6].y;
+    let pinkyUp = hand[20].y < hand[18].y;
+    let thumbOpen = Math.abs(hand[4].x - hand[17].x) > 0.1;
+    let middleDown = hand[12].y > hand[10].y;
+    let ringDown = hand[16].y > hand[14].y;
+    return (indexUp && pinkyUp && thumbOpen && middleDown && ringDown);
+}
+function setup() {
+        let canvas = createCanvas(windowWidth, windowHeight);
+        canvas.parent('canvas-container');
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            particles.push(new GoldParticle());
+        }
+    }
+function draw() {
+    clear(); 
+    if (!isMagicActive) return;
+
+    let isHalfHeart = nuatraitim();
+    let isV = isVSign(); 
+    let isILY = isILYSign();
+
+if (isILY) {
+    if (binaryAlpha < 255) binaryAlpha += 5; 
+    if (morseSound.paused) morseSound.play(); 
+} else {
+    if (binaryAlpha > 0) binaryAlpha -= 10; 
+    morseSound.pause(); 
+    morseSound.currentTime = 0; 
+}
+    
+    heartPulse += 0.005; 
+    let pulse = pow(sin(heartPulse), 2) * 0.01 + 0.9; 
+
+   
+    blendMode(ADD);
+    for (let p of particles) {
+        if (isV || isILY) {
+            p.repelFromCenter(width / 2, height / 2);
+        } else if (isHalfHeart) {
+            let tx = (1 - (handData[0][4].x + handData[0][8].x) / 2) * width;
+            let ty = ((handData[0][4].y + handData[0][8].y) / 2) * height;
+            p.applyHeartShape(tx, ty, pulse);
+        } else if (handData && handData.length > 0) {
+            let tx = (1 - (handData[0][8].x)) * width;
+            let ty = (handData[0][8].y) * height;
+            p.attract(tx, ty);
+        }
+
+        p.update();
+        p.show(isHalfHeart || isV || isILY); 
+    }
+    blendMode(BLEND); 
+
+    
+    if (isV) {
+        if (textAlpha < 255) textAlpha += 5; 
+        
+        push();
+        fill(255, 230, 150, textAlpha);
+        textFont('Charm'); 
+        textAlign(CENTER, CENTER);
+        textSize(width * 0.015); 
+
+        drawingContext.shadowBlur = 20;
+        drawingContext.shadowColor = color(255, 200, 50, textAlpha);
+        
+        text(wishText, width / 2, height / 2);
+        pop();
+    } else {
+        textAlpha = 0; 
+    }
+
+if (binaryAlpha > 0) {
+    push();
+    fill(228, 211, 180, binaryAlpha); // Màu vàng text-gold lung linh
+    textAlign(CENTER, CENTER);
+    textSize(width * 0.025);
+    textFont('monospace'); 
+    
+    drawingContext.shadowBlur = 20;
+    drawingContext.shadowColor = color(255, 200, 50, binaryAlpha);
+    
+    text(BINARY_TEXT, width / 2, height / 2);
+    pop();
+}
+}
+class GoldParticle {
+        constructor() {
+            this.init();
+            this.heartAngle = random(TWO_PI);
+            this.zOffset = random(-15, 15);
+            this.innerFactor = sqrt(random(1));
+        }
+
+        init() {
+            this.pos = createVector(random(width), random(height));
+            this.vel = p5.Vector.random2D();
+            this.acc = createVector(0, 0);
+            this.maxSpeed = random(10, 18);
+            this.size = random(2, 4);
+            this.originalColor = color(random(230, 255), random(190, 230), random(70, 110), random(100, 200));
+            this.noiseOffset = random(1000);
+        }
+
+        applyHeartShape(tx, ty, pulse) {
+            let t = this.heartAngle;
+            let x = 16 * pow(sin(t), 3);
+            let y = -(13 * cos(t) - 5 * cos(2 * t) - 2 * cos(3 * t) - cos(4 * t));
+           let offsetX = random(-10, 10); 
+    let offsetY = random(-10, 10);
+let jitter = 5; 
+let targetX = x * this.innerFactor + random(-jitter, jitter);
+let targetY = y * this.innerFactor + random(-jitter, jitter);            
+let target = createVector(
+                tx + targetX * HEART_SIZE * pulse, 
+                ty + targetY * HEART_SIZE * pulse
+                );
+            let force = p5.Vector.sub(target, this.pos);
+            let d = force.mag();
+            force.setMag(d * 0.2); 
+            this.acc.add(force);
+        }
+
+        attract(tx, ty) {
+            let target = createVector(tx, ty);
+            let force = p5.Vector.sub(target, this.pos);
+            let d = force.mag();
+            if (d < 800) {
+                let strength = map(d, 0, 800, 3.5, 0.2); 
+                force.setMag(strength);
+                let swirl = createVector(force.y, -force.x);
+                swirl.setMag(strength * 0.8);
+                this.acc.add(force);
+                this.acc.add(swirl);
+            }
+        }
+
+        update() {
+            let n = noise(this.noiseOffset) * TWO_PI;
+            this.acc.add(p5.Vector.fromAngle(n).mult(0.1));
+            this.noiseOffset += 0.02;
+            this.vel.add(this.acc);
+            this.vel.limit(this.maxSpeed);
+            this.pos.add(this.vel);
+            this.acc.mult(0);
+            this.vel.mult(0.95); 
+            if (this.pos.x < 0 || this.pos.x > width || this.pos.y < 0 || this.pos.y > height) {
+                this.pos = createVector(random(width), random(height));
+            }
+        }
+
+       show(isSpecial) {
+    noStroke();
+    
+    if (isSpecial) {
+        let alpha = map(this.innerFactor, 0, 1, 150, 255);  
+        fill(255, 40, 80, alpha); 
+    } else {
+        fill(this.originalColor.levels[0], this.originalColor.levels[1], this.originalColor.levels[2], 150);
+    }
+    let pulseIntensity = 0.02; 
+let finalSize = isSpecial ? (this.size * 0.7) * (1 + sin(heartPulse) * 0.05) : this.size;    
+    circle(this.pos.x, this.pos.y, finalSize);
+    if (isSpecial && this.innerFactor > 0.8) {
+        fill(100, 0, 10, 40); 
+        circle(this.pos.x, this.pos.y, finalSize * 1.05); 
+    }
+}
+
+        attractToText(tx, ty) {
+    let angle = random(TWO_PI);
+    let r = random(100, 250); 
+    let targetX = tx + cos(angle) * r * 1.5;
+    let targetY = ty + sin(angle) * r * 0.5;
+    let target = createVector(targetX, targetY);
+    let force = p5.Vector.sub(target, this.pos);
+    let d = force.mag();
+    
+    if (d > 0) {
+        force.setMag(d * 0.1); 
+        this.acc.add(force);
+    }
+    
+    let swirl = createVector(force.y, -force.x);
+    swirl.setMag(1.5);
+    this.acc.add(swirl);
+}
+repelFromCenter(tx, ty) {
+    let target = createVector(tx, ty);
+    let force = p5.Vector.sub(this.pos, target); 
+    let d = force.mag();
+    let safeZone = 250; 
+    
+    if (d < safeZone) {
+        let strength = map(d, 0, safeZone, 2, 0); 
+        force.setMag(strength);
+        this.acc.add(force);
+        let swirl = createVector(-force.y, force.x);
+        swirl.setMag(0.5);
+        this.acc.add(swirl);
+    }
+}
+    }
+    function windowResized() {
+        resizeCanvas(windowWidth, windowHeight);
+    }
+</script>
+</body>
+</html>
