@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎀</title>
+    <title>🎀iuu</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
@@ -166,10 +166,6 @@
     <!-- MÀN HÌNH 3 (Canvas) -->
     <div id="canvas-container"></div>
     <video id="input_video"></video>
-
-
-
-
 <script>
     const CORRECT_NAME = "anh";
     const CORRECT_QUEST = "quế anh là công chúa xinh đẹp nhất";
@@ -181,7 +177,7 @@
     let binaryAlpha = 0; 
     let morseSound = new Audio('morse.wav'); 
     morseSound.loop = true; 
-    const BINARY_TEXT = "01101001 00100000 01101100 01101111 01110110 01100101 00100000 01111001 01101111 01110101";
+    const BINARY_TEXT = "01101100 01110101 01110110 00100000 01111001 01100001 00100000 01110000 01100001 01110010 01110100 01101110 01100101 01110010 00100000";
     const NORMAL_WISHES = [
         "Meomoe đã chặn sự sì trét của bạn ✨",
         "Phùuuuuu~ Meo đã thổi hếc sì trét trên người ebe rùi nè 🌟",
@@ -190,9 +186,15 @@
         "Sẽ qua thôi những u buồn thế gian~ Tình iu sẽ cháy nhưng hông tro tàn 🌈",
         "TiraMissuuuuu 🥺",
         "Ôm cáiiii, hum nai của Quanh sẽ thậc đáng iuuuu 🐟💖",
-        "Ai mò được vào đây vậy?? Công túa phải cười xinh mới đúng chứ nhờ 🤷‍♀️",
+        "Ai mò được vào đây vậy?? Công túa thì phải cười xinh mới đúng chứ nhờ 🤷‍♀️",
         "Xin mời tân cử nhân Ti Ci Cute Ây ngành ngôn ngữ đáng eooo 🎓✨",
         "Úm ba laaa~ Bạn đã nhận gói may mắn free vô thời hạn. Vui lòng cười thật chinhhh để kích hoạt 🧸💖",
+        "Mệt quá thì nghỉ nhiều xíu...Tổng đài Meomoe sẵn sàng phục vụ 247 🙆‍♀️ ",
+        "Răng mà thương chị bé rứa hầyy 🥺",
+        "Ăn uống nghỉ ngơi đàng hoàng nha, hông là hông ngoan mô 🙅‍♀️",
+        "Nghỉ ngơi nhiều xíu Anh híi, Meo thương nhắmm 🥺",
+        "Đang chán đúng hong? Lười một xíu hông sao mô 🙆‍♀️",
+
     ];
     function getSpecialWish() {
         const now = new Date();
@@ -368,7 +370,7 @@ if (isILY) {
         fill(255, 230, 150, textAlpha);
         textFont('Charm'); 
         textAlign(CENTER, CENTER);
-        textSize(width * 0.015); 
+        textSize(width * 0.02); 
 
         drawingContext.shadowBlur = 20;
         drawingContext.shadowColor = color(255, 200, 50, textAlpha);
@@ -381,9 +383,9 @@ if (isILY) {
 
 if (binaryAlpha > 0) {
     push();
-    fill(228, 211, 180, binaryAlpha); // Màu vàng text-gold lung linh
+    fill(228, 211, 180, binaryAlpha); 
     textAlign(CENTER, CENTER);
-    textSize(width * 0.025);
+    textSize(width * 0.0099);
     textFont('monospace'); 
     
     drawingContext.shadowBlur = 20;
